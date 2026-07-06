@@ -1,0 +1,42 @@
+:root {
+  --background: #f5f1e8;
+  --foreground: #1f1b16;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Georgia, "Times New Roman", Times, serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.home {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  padding: 2rem;
+  gap: 0.5rem;
+}
+
+.home h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  letter-spacing: 0.02em;
+}
+
+.home p {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
