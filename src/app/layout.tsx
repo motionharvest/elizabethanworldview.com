@@ -1,9 +1,20 @@
 import type { Metadata } from "next";
+import { Cormorant_Garamond, EB_Garamond } from "next/font/google";
 import "./globals.css";
 
-const siteName = "Elizabethan Worldview";
+const displayFont = Cormorant_Garamond({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
+const bodyFont = EB_Garamond({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
+
+const siteName = "Shakespeare's World";
 const siteDescription =
-  "Exploring Elizabethan thought, history, and culture.";
+  "A landing page for Shakespeare's World: Seeing the Plays Through Elizabethan Eyes, featuring an interactive Three.js celestial spheres motif.";
 const siteUrl = "https://elizabethanworldview.com";
 
 export const metadata: Metadata = {
@@ -23,11 +34,13 @@ export const metadata: Metadata = {
     siteName,
     title: siteName,
     description: siteDescription,
+    images: [{ url: "/images/cover.jpg", width: 540, height: 810 }],
   },
   twitter: {
     card: "summary_large_image",
     title: siteName,
     description: siteDescription,
+    images: ["/images/cover.jpg"],
   },
 };
 
@@ -37,7 +50,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB">
+    <html
+      lang="en-GB"
+      className={`${displayFont.variable} ${bodyFont.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
