@@ -76,6 +76,11 @@ a {
   color: color-mix(in srgb, currentColor 75%, var(--gold) 25%);
 }
 
+.eyebrow--authors {
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  letter-spacing: 0.1em;
+}
+
 h1,
 h2,
 h3 {

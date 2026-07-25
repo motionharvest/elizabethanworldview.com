@@ -42,7 +42,7 @@ export default function Home() {
         <div className="hero__bg" aria-hidden="true" />
         <div className="hero__inner container">
           <div className="hero__copy">
-            <p className="eyebrow">
+            <p className="eyebrow eyebrow--authors">
               Dennis Krausnick, Josh Lubarr &amp; Rebecca Goodheart
             </p>
             <h1>
