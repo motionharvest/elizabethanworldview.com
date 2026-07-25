@@ -103,16 +103,29 @@ export default function Home() {
             <p className="eyebrow">About the Book</p>
             <h2>Recover the worldview behind the words.</h2>
             <p>
-              Elizabethan England was not only different in language, politics,
-              or technology. The era held a fundamentally different model of the
-              universe, of society, and of the human body itself.
+              Elizabethan England, the society that produced William
+              Shakespeare, was dramatically different from the modern world of
+              today. This is true not only in the most obvious ways, such as
+              language, technology, living standards, and politics, but in the
+              ideas and beliefs that shaped Elizabethans&apos; understanding of
+              themselves and the world around them. Just as audiences 400 years
+              from now will need guidance to understand concepts like &ldquo;the
+              American dream&rdquo; or &ldquo;wokeness,&rdquo; an understanding
+              of the Elizabethan worldview illuminates Shakespeare&apos;s plays
+              in new and surprising ways.
             </p>
             <p>
-              <em>Shakespeare&apos;s World</em> gives performers, directors,
-              educators, and curious readers an engaging tour through these
-              foundational ideas, from the four elements and bodily humors to
-              the great chain of being, and shows how this worldview permeates
-              each play.
+              A fascinating and readable distillation of the insights developed
+              by Dennis Krausnick and Shakespeare &amp; Company,{" "}
+              <em>Shakespeare&apos;s World</em>{" "}
+              gives performers and directors an engaging tour of the
+              Elizabethan worldview, unpacking such
+              alien concepts as the four elements, the bodily humors, and the
+              great chain of being. Detailed notes for each Shakespeare play
+              show how this worldview permeates the text, enriching the
+              experience of anyone looking to understand and engage with
+              Shakespeare&apos;s writing in a practical, personal, and active
+              way.
             </p>
           </div>
           <figure className="feature-image feature-image--compact">
