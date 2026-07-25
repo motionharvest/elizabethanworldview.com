@@ -42,7 +42,9 @@ export default function Home() {
         <div className="hero__bg" aria-hidden="true" />
         <div className="hero__inner container">
           <div className="hero__copy">
-            <p className="eyebrow">Bloomsbury</p>
+            <p className="eyebrow">
+              Dennis Krausnick, Josh Lubarr &amp; Rebecca Goodheart
+            </p>
             <h1>
               Shakespeare&apos;s World
               <span>Seeing the Plays Through Elizabethan Eyes</span>
@@ -51,10 +53,6 @@ export default function Home() {
               A fascinating, readable distillation of Dennis Krausnick&apos;s
               actor-training legacy at Shakespeare &amp; Company — with practical
               notes for every Shakespeare play.
-            </p>
-            <p className="hero__credits">
-              By Dennis Krausnick, Josh Lubarr &amp; Rebecca Goodheart · Foreword
-              by Tina Packer
             </p>
             <div className="hero__actions">
               <a className="button button--primary" href="#book">
