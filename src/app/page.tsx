@@ -42,7 +42,7 @@ export default function Home() {
         <div className="hero__bg" aria-hidden="true" />
         <div className="hero__inner container">
           <div className="hero__copy">
-            <p className="eyebrow">Bloomsbury · Early 2026</p>
+            <p className="eyebrow">Bloomsbury</p>
             <h1>
               Shakespeare&apos;s World
               <span>Seeing the Plays Through Elizabethan Eyes</span>
