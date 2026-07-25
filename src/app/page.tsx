@@ -5,26 +5,36 @@ const lenses = [
   {
     title: "The Cosmos",
     body: "What filled the heavens in 1600? The book explores a spherical universe with humanity at its center, opening fresh readings of Antony & Cleopatra, King John, and Romeo & Juliet.",
-    image: "/images/cover.jpg",
-    alt: "Book cover featuring Elizabethan celestial spheres",
+    image: "/images/heliocentric-universe.webp",
+    alt: "Heliocentric diagram of the universe from the Elizabethan era",
+    width: 559,
+    height: 723,
   },
   {
     title: "The Great Chain of Being",
     body: "What if everything in existence had a rightful place? See how Shakespeare's plots often turn on the breaking, and restoration, of cosmic order.",
     image: "/images/great-chain.jpg",
     alt: "Historic image illustrating the great chain of being",
+    width: 1011,
+    height: 1480,
+    compact: true,
   },
   {
     title: "Human Bodies & Humors",
     body: "Step into early modern physiology, where body, mind, and spirit were inseparable. A practical lens for actors shaping character from the inside out.",
     image: "/images/four-humors.jpg",
     alt: "Illustration associated with the four humors",
+    width: 1200,
+    height: 1577,
+    compact: true,
   },
   {
     title: "Correspondences",
     body: "Everything connects in the Elizabethan imagination. The plays' poetry becomes newly vivid when kings can be roses and lovers can be oysters.",
     image: "/images/chain-ladder.jpg",
     alt: "Allegorical image representing correspondences across the chain of being",
+    width: 1400,
+    height: 1129,
   },
 ];
 
@@ -105,7 +115,7 @@ export default function Home() {
               each play.
             </p>
           </div>
-          <figure className="feature-image">
+          <figure className="feature-image feature-image--compact">
             <Image
               src="/images/stage-cleopatra.jpg"
               alt="Theatrical image from a Shakespeare production"
@@ -121,17 +131,28 @@ export default function Home() {
         <div className="container">
           <p className="eyebrow">Four Lenses</p>
           <h2>How the book helps readers and practitioners see differently</h2>
-          <div className="lens-grid">
-            {lenses.map((lens) => (
-              <article className="lens-card" key={lens.title}>
-                <Image
-                  src={lens.image}
-                  alt={lens.alt}
-                  width={1200}
-                  height={900}
-                  sizes="(max-width: 960px) 100vw, 25vw"
-                />
-                <div className="lens-card__body">
+          <div className="lens-list">
+            {lenses.map((lens, index) => (
+              <article className="lens-row" key={lens.title}>
+                <figure
+                  className={
+                    lens.compact
+                      ? "lens-row__media lens-row__media--compact"
+                      : "lens-row__media"
+                  }
+                >
+                  <Image
+                    src={lens.image}
+                    alt={lens.alt}
+                    width={lens.width}
+                    height={lens.height}
+                    sizes="(max-width: 900px) 100vw, 50vw"
+                  />
+                </figure>
+                <div className="lens-row__body">
+                  <span className="lens-row__index">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                   <h3>{lens.title}</h3>
                   <p>{lens.body}</p>
                 </div>
@@ -148,8 +169,13 @@ export default function Home() {
           <p className="max-copy">
             For decades, Dennis Krausnick brought Elizabethan worldview training
             to life in the world-renowned Month-Long Intensive at
-            Shakespeare&nbsp;&amp;&nbsp;Company in Lenox, Massachusetts. This book
-            distills that immersive teaching tradition for a wider audience.
+            Shakespeare&nbsp;&amp;&nbsp;Company in Lenox, Massachusetts, where actors
+            still study the era&apos;s cosmology, physiology, and stagecraft,
+            including the direct actor-audience relationship at the heart of
+            Elizabethan performance. This book distills that immersive teaching
+            tradition, usually reserved for actors training in person over
+            weeks, for any performer, director, or curious reader working with
+            the plays.
           </p>
           <div className="stage-strip">
             <Image
@@ -160,6 +186,7 @@ export default function Home() {
               sizes="(max-width: 960px) 100vw, 33vw"
             />
             <Image
+              className="stage-strip__img--top"
               src="/images/stage-othello.jpg"
               alt="Stage moment from a Shakespeare tragedy"
               width={1600}
@@ -167,6 +194,7 @@ export default function Home() {
               sizes="(max-width: 960px) 100vw, 33vw"
             />
             <Image
+              className="stage-strip__img--top"
               src="/images/stage-cleopatra.jpg"
               alt="Stage moment from Antony and Cleopatra"
               width={1600}
@@ -183,7 +211,13 @@ export default function Home() {
           <h2>Teachers, artists, and lifelong Shakespeare practitioners</h2>
           <div className="author-grid">
             <article className="author-card">
-              <div className="author-card__placeholder">DK</div>
+              <Image
+                src="/images/dennis-krausnick.jpg"
+                alt="Dennis Krausnick"
+                width={1920}
+                height={1920}
+                sizes="(max-width: 960px) 100vw, 30vw"
+              />
               <h3>Dennis Krausnick</h3>
               <p>
                 Beloved classical acting teacher and former Director of Training
@@ -252,17 +286,6 @@ export default function Home() {
           </figure>
         </div>
       </section>
-
-      <footer className="section section--dark footer-cta">
-        <div className="container">
-          <p className="eyebrow">Stay Connected</p>
-          <h2>Publication planned for early 2026 from Bloomsbury.</h2>
-          <p>
-            For event, workshop, and pre-order updates, follow Elm Shakespeare
-            Company and Bloomsbury announcements.
-          </p>
-        </div>
-      </footer>
     </main>
   );
 }
