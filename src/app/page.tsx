@@ -51,7 +51,7 @@ export default function Home() {
             </h1>
             <p className="hero__dek">
               A fascinating, readable distillation of Dennis Krausnick&apos;s
-              actor-training legacy at Shakespeare &amp; Company — with practical
+              actor-training legacy at Shakespeare &amp; Company, with practical
               notes for every Shakespeare play.
             </p>
             <div className="hero__actions">
@@ -93,8 +93,8 @@ export default function Home() {
             <p>
               <em>Shakespeare&apos;s World</em> gives performers, directors,
               educators, and curious readers an engaging tour through these
-              foundational ideas — from the four elements and bodily humors to
-              the great chain of being — and shows how this worldview permeates
+              foundational ideas, from the four elements and bodily humors to
+              the great chain of being, and shows how this worldview permeates
               each play.
             </p>
           </div>
@@ -225,7 +225,7 @@ export default function Home() {
             <h2>Four evenings with Rebecca Goodheart</h2>
             <p>
               A discussion and performance series exploring how Shakespeare and
-              his audience understood the world — and what that perspective can
+              his audience understood the world, and what that perspective can
               still unlock for us today.
             </p>
             <ul className="topic-list">
