@@ -157,6 +157,18 @@ p {
   max-width: 52ch;
 }
 
+.hero__dek a {
+  text-decoration: underline;
+  text-decoration-color: rgba(246, 232, 206, 0.45);
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color 180ms ease, color 180ms ease;
+}
+
+.hero__dek a:hover {
+  color: var(--gold-soft);
+  text-decoration-color: var(--gold-soft);
+}
+
 .hero__dek {
   margin-top: 1.5rem;
   font-size: clamp(1.09rem, 1.6vw, 1.35rem);

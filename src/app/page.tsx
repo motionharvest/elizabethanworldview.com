@@ -50,7 +50,14 @@ export default function Home() {
               <span>Seeing the Plays Through Elizabethan Eyes</span>
             </h1>
             <p className="hero__dek">
-              A fascinating, readable distillation of Dennis Krausnick&apos;s
+              A fascinating, readable distillation of{" "}
+              <a
+                href="https://shakespeare.org/actor_faculty/dennis-krausnick/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dennis Krausnick&apos;s
+              </a>{" "}
               actor-training legacy at Shakespeare &amp; Company, with practical
               notes for every Shakespeare play.
             </p>
