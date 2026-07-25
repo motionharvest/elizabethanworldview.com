@@ -181,6 +181,34 @@ export default function CelestialSpheres() {
     scene.add(stars);
 
     // --- sizing ---
+    const OUTER = Math.max(...RINGS.map((r) => r.radius));
+
+    // Half-angle (as a tangent) subtended by a ring of world-radius R, at its
+    // worst orientation. Perspective makes the near arc of a tilted ring bulge
+    // past its flat-on size, so the widest point rides at z = R²/D rather than
+    // z = 0 — that bulge is what used to get sliced off by the canvas edge.
+    // A ring is centred on the origin, so this bound holds under any tilt.
+    const projected = (R: number) => {
+      const D = camera.position.length();
+      const z = Math.min((R * R) / D, R * 0.999);
+      return Math.sqrt(Math.max(R * R - z * z, 0)) / (D - z);
+    };
+
+    // Largest uniform scale whose outermost ring still clears the frame.
+    const fitScale = (aspect: number) => {
+      const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
+      const limit = tanHalf * Math.min(1, aspect) * 0.94; // 6% breathing room
+      let lo = 0.05;
+      let hi = 1.35;
+      if (projected(OUTER * hi) <= limit) return hi;
+      for (let i = 0; i < 22; i++) {
+        const mid = (lo + hi) / 2;
+        if (projected(OUTER * mid) <= limit) lo = mid;
+        else hi = mid;
+      }
+      return lo;
+    };
+
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = mount;
       if (!w || !h) return;
@@ -188,9 +216,7 @@ export default function CelestialSpheres() {
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      // keep the whole armature in frame on narrow screens
-      const s = Math.min(1, (w / h) * 1.25);
-      world.scale.setScalar(s);
+      world.scale.setScalar(fitScale(camera.aspect));
       if (reducedMotion) renderer.render(scene, camera);
     };
     const ro = new ResizeObserver(resize);
@@ -209,6 +235,9 @@ export default function CelestialSpheres() {
     // --- animation loop, paused offscreen/hidden ---
     let raf = 0;
     let visible = true;
+    let spin = 0;
+    let driftX = 0;
+    let driftY = 0;
     const clock = new THREE.Clock();
 
     const frame = () => {
@@ -216,10 +245,12 @@ export default function CelestialSpheres() {
       const dt = Math.min(clock.getDelta(), 0.05);
       const t = clock.elapsedTime;
 
-      world.rotation.y += 0.05 * dt;
-      world.rotation.y += (targetY - world.rotation.y * 0) * 0; // parallax applied below
-      world.rotation.x += ((0.06 + targetX) - world.rotation.x) * 0.03;
-      world.rotation.z += ((targetY * 0.5) - world.rotation.z) * 0.03;
+      spin += 0.05 * dt;
+      driftX += (targetX - driftX) * 0.03;
+      driftY += (targetY - driftY) * 0.03;
+      world.rotation.y = spin + driftY;
+      world.rotation.x = 0.06 + driftX;
+      world.rotation.z = driftY * 0.5;
 
       for (const { pivot, mesh, spec } of pivots) {
         mesh.rotation.z += spec.spin * dt;
