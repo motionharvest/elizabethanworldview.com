@@ -240,6 +240,7 @@ export default function Home() {
             </article>
             <article className="author-card">
               <Image
+                className="author-card__img--top"
                 src="/images/josh-lubarr.jpg"
                 alt="Josh Lubarr"
                 width={553}

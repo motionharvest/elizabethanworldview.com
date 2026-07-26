@@ -442,6 +442,10 @@ p {
   display: block;
 }
 
+.author-card__img--top {
+  object-position: 50% 20%;
+}
+
 .author-card__placeholder {
   display: grid;
   place-items: center;
