@@ -238,12 +238,13 @@ export default function CelestialSpheres() {
     let spin = 0;
     let driftX = 0;
     let driftY = 0;
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
 
-    const frame = () => {
+    const frame = (timestamp?: number) => {
       raf = requestAnimationFrame(frame);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      const t = clock.elapsedTime;
+      timer.update(timestamp);
+      const dt = Math.min(timer.getDelta(), 0.05);
+      const t = timer.getElapsed();
 
       spin += 0.05 * dt;
       driftX += (targetX - driftX) * 0.03;
@@ -267,7 +268,7 @@ export default function CelestialSpheres() {
 
     const start = () => {
       if (!raf && visible && !document.hidden && !reducedMotion) {
-        clock.getDelta();
+        timer.reset();
         frame();
       }
     };
@@ -297,6 +298,7 @@ export default function CelestialSpheres() {
 
     return () => {
       stop();
+      timer.dispose();
       io.disconnect();
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
