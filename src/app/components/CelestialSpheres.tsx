@@ -4,39 +4,38 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * A Three.js recreation of the Ptolemaic celestial-spheres engraving on the
- * cover of "Shakespeare's World" — nested, tilted annular bands (the spheres
- * of the Moon through the Zodiac) slowly precessing around a central Earth.
+ * A Three.js armillary/gyroscope for the hero: eight concentric rings held
+ * flat-on to the camera, each twinned with a ring of the same size pitched
+ * 120° about X. Every pair turns about the view axis, so the flat ring keeps
+ * facing the viewer while its twin sweeps through — a gyroscope caged around
+ * a central Earth.
  */
 
 const PARCHMENT = 0xe9dcbc;
-const GOLD = 0xc9a548;
-const SAGE = 0x8a9471;
 const ROSE = 0xc98f8f;
 const PALE_GOLD = 0xdec179;
+
+// Pitch applied to the second ring of every pair.
+const TWIN_PITCH = (Math.PI * 2) / 3; // 120°
 
 type RingSpec = {
   radius: number;
   width: number;
-  tiltX: number;
-  tiltY: number;
-  spin: number; // rad/s around the ring's own axis
-  wobble: number; // precession amplitude
-  wobbleFreq: number;
-  colors: [number] | [number, number]; // one color = solid, two = segmented
+  spin: number; // rad/s of the pair about the view axis
+  colors: [number] | [number, number]; // one color = solid, two = dashed
   segments?: number;
 };
 
 // Outermost (Sphæra Zodiaci) to innermost (Sphæra Lunæ)
 const RINGS: RingSpec[] = [
-  { radius: 3.05, width: 0.34, tiltX: 0.42, tiltY: 0.10, spin: 0.045, wobble: 0.050, wobbleFreq: 0.11, colors: [ROSE, PARCHMENT], segments: 24 },
-  { radius: 2.68, width: 0.18, tiltX: 0.60, tiltY: -0.16, spin: -0.060, wobble: 0.060, wobbleFreq: 0.14, colors: [GOLD] },
-  { radius: 2.36, width: 0.17, tiltX: 0.78, tiltY: 0.24, spin: 0.075, wobble: 0.070, wobbleFreq: 0.09, colors: [PALE_GOLD, PARCHMENT], segments: 20 },
-  { radius: 2.02, width: 0.15, tiltX: 0.95, tiltY: -0.30, spin: -0.085, wobble: 0.065, wobbleFreq: 0.16, colors: [SAGE] },
-  { radius: 1.68, width: 0.19, tiltX: 1.12, tiltY: 0.36, spin: 0.100, wobble: 0.075, wobbleFreq: 0.12, colors: [GOLD, PARCHMENT], segments: 16 },
-  { radius: 1.36, width: 0.13, tiltX: 1.28, tiltY: -0.42, spin: -0.110, wobble: 0.070, wobbleFreq: 0.18, colors: [ROSE] },
-  { radius: 1.07, width: 0.12, tiltX: 1.44, tiltY: 0.48, spin: 0.125, wobble: 0.080, wobbleFreq: 0.13, colors: [PARCHMENT] },
-  { radius: 0.80, width: 0.11, tiltX: 1.58, tiltY: -0.54, spin: -0.135, wobble: 0.085, wobbleFreq: 0.20, colors: [SAGE, PARCHMENT], segments: 12 },
+  { radius: 3.05, width: 0.34, spin: 0.045, colors: [ROSE, PARCHMENT], segments: 24 },
+  { radius: 2.72, width: 0.16, spin: -0.060, colors: [PALE_GOLD] },
+  { radius: 2.40, width: 0.15, spin: 0.075, colors: [PALE_GOLD] },
+  { radius: 2.09, width: 0.14, spin: -0.085, colors: [PALE_GOLD] },
+  { radius: 1.79, width: 0.13, spin: 0.100, colors: [PALE_GOLD] },
+  { radius: 1.50, width: 0.12, spin: -0.110, colors: [PALE_GOLD] },
+  { radius: 1.22, width: 0.11, spin: 0.125, colors: [PALE_GOLD] },
+  { radius: 0.95, width: 0.10, spin: -0.135, colors: [PALE_GOLD] },
 ];
 
 export default function CelestialSpheres() {
@@ -75,16 +74,12 @@ export default function CelestialSpheres() {
     scene.add(world);
 
     // --- rings ---
-    const pivots: { pivot: THREE.Group; mesh: THREE.Group; spec: RingSpec }[] =
-      [];
-
-    for (const spec of RINGS) {
-      const pivot = new THREE.Group();
-      pivot.rotation.set(spec.tiltX, spec.tiltY, 0);
-
+    // One flat annular band. Segmented specs alternate two colours around the
+    // circumference, which is what reads as the dashed outermost sphere.
+    const buildBand = (spec: RingSpec) => {
       const band = new THREE.Group();
-
       const inner = spec.radius - spec.width;
+
       if (spec.colors.length === 2 && spec.segments) {
         const step = (Math.PI * 2) / spec.segments;
         for (let s = 0; s < spec.segments; s++) {
@@ -108,8 +103,8 @@ export default function CelestialSpheres() {
         const geo = new THREE.RingGeometry(inner, spec.radius, 96, 1);
         const mat = new THREE.MeshStandardMaterial({
           color: spec.colors[0],
-          roughness: spec.colors[0] === GOLD ? 0.35 : 0.55,
-          metalness: spec.colors[0] === GOLD ? 0.55 : 0.18,
+          roughness: 0.5,
+          metalness: 0.25,
           side: THREE.DoubleSide,
         });
         band.add(new THREE.Mesh(geo, mat));
@@ -122,16 +117,30 @@ export default function CelestialSpheres() {
         metalness: 0.6,
       });
       for (const r of [inner, spec.radius]) {
-        const edge = new THREE.Mesh(
-          new THREE.TorusGeometry(r, 0.008, 6, 128),
-          edgeMat
+        band.add(
+          new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 6, 128), edgeMat)
         );
-        band.add(edge);
       }
 
-      pivot.add(band);
+      return band;
+    };
+
+    // Each sphere is a pair: a camera-facing band plus a twin of the same
+    // radius pitched 120° about X. The pair turns about the view axis, so the
+    // flat band never leaves the viewer's eye.
+    const pairs: { pivot: THREE.Group; spec: RingSpec }[] = [];
+
+    for (const spec of RINGS) {
+      const pivot = new THREE.Group();
+
+      pivot.add(buildBand(spec));
+
+      const twin = buildBand(spec);
+      twin.rotation.x = TWIN_PITCH;
+      pivot.add(twin);
+
       world.add(pivot);
-      pivots.push({ pivot, mesh: band, spec });
+      pairs.push({ pivot, spec });
     }
 
     // --- central Earth ---
@@ -194,10 +203,16 @@ export default function CelestialSpheres() {
       return Math.sqrt(Math.max(R * R - z * z, 0)) / (D - z);
     };
 
+    // Worst-case pointer-parallax offset, in world units — the fit has to hold
+    // at full drift, not just at rest.
+    const DRIFT = Math.hypot(0.22, 0.16);
+
     // Largest uniform scale whose outermost ring still clears the frame.
     const fitScale = (aspect: number) => {
       const tanHalf = Math.tan((camera.fov * Math.PI) / 360);
-      const limit = tanHalf * Math.min(1, aspect) * 0.94; // 6% breathing room
+      const limit =
+        tanHalf * Math.min(1, aspect) * 0.94 - // 6% breathing room
+        DRIFT / camera.position.length();
       let lo = 0.05;
       let hi = 1.35;
       if (projected(OUTER * hi) <= limit) return hi;
@@ -224,18 +239,19 @@ export default function CelestialSpheres() {
     resize();
 
     // --- pointer parallax ---
+    // Shifted, never rotated: tipping the world would swing the flat bands off
+    // their head-on facing, which is the whole point of the arrangement.
     let targetX = 0;
     let targetY = 0;
     const onPointer = (e: PointerEvent) => {
-      targetY = (e.clientX / window.innerWidth - 0.5) * 0.35;
-      targetX = (e.clientY / window.innerHeight - 0.5) * 0.25;
+      targetX = (e.clientX / window.innerWidth - 0.5) * 0.22;
+      targetY = -(e.clientY / window.innerHeight - 0.5) * 0.16;
     };
     if (!reducedMotion) window.addEventListener("pointermove", onPointer);
 
     // --- animation loop, paused offscreen/hidden ---
     let raf = 0;
     let visible = true;
-    let spin = 0;
     let driftX = 0;
     let driftY = 0;
     const timer = new THREE.Timer();
@@ -246,20 +262,12 @@ export default function CelestialSpheres() {
       const dt = Math.min(timer.getDelta(), 0.05);
       const t = timer.getElapsed();
 
-      spin += 0.05 * dt;
       driftX += (targetX - driftX) * 0.03;
       driftY += (targetY - driftY) * 0.03;
-      world.rotation.y = spin + driftY;
-      world.rotation.x = 0.06 + driftX;
-      world.rotation.z = driftY * 0.5;
+      world.position.set(driftX, driftY, 0);
 
-      for (const { pivot, mesh, spec } of pivots) {
-        mesh.rotation.z += spec.spin * dt;
-        pivot.rotation.x =
-          spec.tiltX + Math.sin(t * spec.wobbleFreq * Math.PI * 2) * spec.wobble;
-        pivot.rotation.y =
-          spec.tiltY +
-          Math.cos(t * spec.wobbleFreq * Math.PI * 2 + 1.3) * spec.wobble * 0.7;
+      for (const { pivot, spec } of pairs) {
+        pivot.rotation.z += spec.spin * dt;
       }
       stars.rotation.y = t * 0.004;
 
