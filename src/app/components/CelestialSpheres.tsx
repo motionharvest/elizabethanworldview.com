@@ -11,7 +11,7 @@ import * as THREE from "three";
  * a central Earth.
  */
 
-const PARCHMENT = 0xe9dcbc;
+const OLIVE = 0x969d74;
 const ROSE = 0xc98f8f;
 const PALE_GOLD = 0xdec179;
 
@@ -28,7 +28,7 @@ type RingSpec = {
 
 // Outermost (Sphæra Zodiaci) to innermost (Sphæra Lunæ)
 const RINGS: RingSpec[] = [
-  { radius: 3.05, width: 0.34, spin: 0.045, colors: [ROSE, PARCHMENT], segments: 24 },
+  { radius: 3.05, width: 0.34, spin: 0.045, colors: [ROSE, OLIVE], segments: 24 },
   { radius: 2.72, width: 0.16, spin: -0.060, colors: [PALE_GOLD] },
   { radius: 2.40, width: 0.15, spin: 0.075, colors: [PALE_GOLD] },
   { radius: 2.09, width: 0.14, spin: -0.085, colors: [PALE_GOLD] },
