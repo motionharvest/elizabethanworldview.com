@@ -56,7 +56,9 @@ export default function RootLayout({
       lang="en-GB"
       className={`${displayFont.variable} ${bodyFont.variable}`}
     >
-      <body>
+      {/* Browser extensions (ColorZilla, Grammarly, …) inject attributes on
+          <body> before hydration; ignore those attribute diffs. */}
+      <body suppressHydrationWarning>
         <SiteHeader />
         {children}
         <SiteFooter />
