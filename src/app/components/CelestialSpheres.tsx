@@ -4,11 +4,12 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * A Three.js armillary/gyroscope for the hero: eight concentric rings held
- * flat-on to the camera, each twinned with a ring of the same size pitched
- * 120° about X. Every pair turns about the view axis, so the flat ring keeps
- * facing the viewer while its twin sweeps through — a gyroscope caged around
- * a central Earth.
+ * A Three.js armillary/gyroscope for the hero: eight concentric rings, each
+ * twinned with a ring of the same size pitched 90° about X. Every pair but the
+ * outermost turns about its own axis while its twin sweeps through — a gyroscope
+ * caged around
+ * a central Earth. The whole armature is then tilted off-axis so the rings
+ * read as ellipses rather than as concentric circles.
  */
 
 const OLIVE = 0x969d74;
@@ -16,19 +17,35 @@ const ROSE = 0xc98f8f;
 const PALE_GOLD = 0xdec179;
 
 // Pitch applied to the second ring of every pair.
-const TWIN_PITCH = (Math.PI * 2) / 3; // 120°
+const TWIN_PITCH = Math.PI / 2; // 90°
+
+// Static tilt of the whole armature. Three's default Euler order is XYZ, and
+// with y = 0 that composes as Rx·Rz — i.e. pitch about X first, then roll about
+// the already-pitched Z, which is the order these two were specified in.
+const TILT_X = THREE.MathUtils.degToRad(15);
+const TILT_Z = THREE.MathUtils.degToRad(10);
+
+type BandColors = [number] | [number, number]; // one color = solid, two = dashed
 
 type RingSpec = {
   radius: number;
   width: number;
   spin: number; // rad/s of the pair about the view axis
-  colors: [number] | [number, number]; // one color = solid, two = dashed
+  colors: BandColors; // the camera-facing band
+  twinColors?: BandColors; // the pitched twin; defaults to `colors`
   segments?: number;
 };
 
 // Outermost (Sphæra Zodiaci) to innermost (Sphæra Lunæ)
 const RINGS: RingSpec[] = [
-  { radius: 3.05, width: 0.34, spin: 0.045, colors: [ROSE, OLIVE], segments: 24 },
+  {
+    radius: 3.05,
+    width: 0.34,
+    spin: 0, // stationary — the outermost sphere holds still while the rest turn
+    colors: [ROSE, PALE_GOLD],
+    twinColors: [ROSE, OLIVE],
+    segments: 24,
+  },
   { radius: 2.72, width: 0.16, spin: -0.060, colors: [PALE_GOLD] },
   { radius: 2.40, width: 0.15, spin: 0.075, colors: [PALE_GOLD] },
   { radius: 2.09, width: 0.14, spin: -0.085, colors: [PALE_GOLD] },
@@ -37,6 +54,8 @@ const RINGS: RingSpec[] = [
   { radius: 1.22, width: 0.11, spin: 0.125, colors: [PALE_GOLD] },
   { radius: 0.95, width: 0.10, spin: -0.135, colors: [PALE_GOLD] },
 ];
+
+const OUTER = Math.max(...RINGS.map((r) => r.radius));
 
 export default function CelestialSpheres() {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -60,27 +79,53 @@ export default function CelestialSpheres() {
       powerPreference: "low-power",
     });
     renderer.setClearColor(0x000000, 0);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xfff2dc, 0.9));
-    const sun = new THREE.DirectionalLight(0xffe6bf, 2.1);
+    // Ambient sits lower than the sun on purpose: fill this flat would wash the
+    // cast shadows back out of the picture.
+    scene.add(new THREE.AmbientLight(0xfff2dc, 0.6));
+    const sun = new THREE.DirectionalLight(0xffe6bf, 2.4);
     sun.position.set(5, 7, 9);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    // The light sits ~12.5 units out; the armillary is ~4.5 across at full fit.
+    sun.shadow.camera.near = 5;
+    sun.shadow.camera.far = 22;
+    // The eight unpitched bands are all coplanar, so each samples the shadow
+    // map at its own stored depth. Without these two it reads as uniform acne.
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.03;
     scene.add(sun);
     const glow = new THREE.PointLight(0xd8a94e, 6, 14, 1.6);
     glow.position.set(0, 0.4, 3.4);
     scene.add(glow);
 
+    // `world` carries the drift offset and the fit scale; `armature` nests
+    // inside it and carries nothing but the static tilt, so the two concerns
+    // never have to be composed by hand.
     const world = new THREE.Group();
     scene.add(world);
+
+    const armature = new THREE.Group();
+    armature.rotation.set(TILT_X, 0, TILT_Z);
+    world.add(armature);
 
     // --- rings ---
     // One flat annular band. Segmented specs alternate two colours around the
     // circumference, which is what reads as the dashed outermost sphere.
-    const buildBand = (spec: RingSpec) => {
+    const buildBand = (spec: RingSpec, colors: BandColors) => {
       const band = new THREE.Group();
       const inner = spec.radius - spec.width;
 
-      if (spec.colors.length === 2 && spec.segments) {
+      const shadowed = (mesh: THREE.Mesh) => {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
+      };
+
+      if (colors.length === 2 && spec.segments) {
         const step = (Math.PI * 2) / spec.segments;
         for (let s = 0; s < spec.segments; s++) {
           const geo = new THREE.RingGeometry(
@@ -92,22 +137,24 @@ export default function CelestialSpheres() {
             step
           );
           const mat = new THREE.MeshStandardMaterial({
-            color: spec.colors[s % 2],
+            color: colors[s % 2],
             roughness: 0.55,
             metalness: 0.2,
             side: THREE.DoubleSide,
+            shadowSide: THREE.DoubleSide,
           });
-          band.add(new THREE.Mesh(geo, mat));
+          band.add(shadowed(new THREE.Mesh(geo, mat)));
         }
       } else {
         const geo = new THREE.RingGeometry(inner, spec.radius, 96, 1);
         const mat = new THREE.MeshStandardMaterial({
-          color: spec.colors[0],
+          color: colors[0],
           roughness: 0.5,
           metalness: 0.25,
           side: THREE.DoubleSide,
+          shadowSide: THREE.DoubleSide,
         });
-        band.add(new THREE.Mesh(geo, mat));
+        band.add(shadowed(new THREE.Mesh(geo, mat)));
       }
 
       // gilt edges give the flat bands an engraved definition
@@ -118,28 +165,29 @@ export default function CelestialSpheres() {
       });
       for (const r of [inner, spec.radius]) {
         band.add(
-          new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 6, 128), edgeMat)
+          shadowed(
+            new THREE.Mesh(new THREE.TorusGeometry(r, 0.008, 6, 128), edgeMat)
+          )
         );
       }
 
       return band;
     };
 
-    // Each sphere is a pair: a camera-facing band plus a twin of the same
-    // radius pitched 120° about X. The pair turns about the view axis, so the
-    // flat band never leaves the viewer's eye.
+    // Each sphere is a pair: one band plus a twin of the same radius pitched
+    // 90° about X, the two turning together about the pair's own Z.
     const pairs: { pivot: THREE.Group; spec: RingSpec }[] = [];
 
     for (const spec of RINGS) {
       const pivot = new THREE.Group();
 
-      pivot.add(buildBand(spec));
+      pivot.add(buildBand(spec, spec.colors));
 
-      const twin = buildBand(spec);
+      const twin = buildBand(spec, spec.twinColors ?? spec.colors);
       twin.rotation.x = TWIN_PITCH;
       pivot.add(twin);
 
-      world.add(pivot);
+      armature.add(pivot);
       pairs.push({ pivot, spec });
     }
 
@@ -152,7 +200,9 @@ export default function CelestialSpheres() {
         metalness: 0.05,
       })
     );
-    world.add(earth);
+    earth.castShadow = true;
+    earth.receiveShadow = true;
+    armature.add(earth);
     const meridian = new THREE.Mesh(
       new THREE.TorusGeometry(0.345, 0.006, 6, 96),
       new THREE.MeshStandardMaterial({
@@ -162,7 +212,9 @@ export default function CelestialSpheres() {
       })
     );
     meridian.rotation.x = Math.PI / 2.4;
-    world.add(meridian);
+    meridian.castShadow = true;
+    meridian.receiveShadow = true;
+    armature.add(meridian);
 
     // --- faint golden stars ---
     const starCount = 140;
@@ -190,8 +242,6 @@ export default function CelestialSpheres() {
     scene.add(stars);
 
     // --- sizing ---
-    const OUTER = Math.max(...RINGS.map((r) => r.radius));
-
     // Half-angle (as a tangent) subtended by a ring of world-radius R, at its
     // worst orientation. Perspective makes the near arc of a tilted ring bulge
     // past its flat-on size, so the widest point rides at z = R²/D rather than
@@ -224,6 +274,19 @@ export default function CelestialSpheres() {
       return lo;
     };
 
+    // The shadow frustum tracks the fitted size rather than sitting at a fixed
+    // worst case, so narrow viewports spend their 2048² on a smaller armillary
+    // instead of on empty margin.
+    const fitShadowCamera = (scale: number) => {
+      const extent = OUTER * scale + DRIFT + 0.2;
+      const shadowCam = sun.shadow.camera;
+      shadowCam.left = -extent;
+      shadowCam.right = extent;
+      shadowCam.top = extent;
+      shadowCam.bottom = -extent;
+      shadowCam.updateProjectionMatrix();
+    };
+
     const resize = () => {
       const { clientWidth: w, clientHeight: h } = mount;
       if (!w || !h) return;
@@ -231,7 +294,9 @@ export default function CelestialSpheres() {
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      world.scale.setScalar(fitScale(camera.aspect));
+      const scale = fitScale(camera.aspect);
+      world.scale.setScalar(scale);
+      fitShadowCamera(scale);
       if (reducedMotion) renderer.render(scene, camera);
     };
     const ro = new ResizeObserver(resize);
@@ -239,8 +304,8 @@ export default function CelestialSpheres() {
     resize();
 
     // --- pointer parallax ---
-    // Shifted, never rotated: tipping the world would swing the flat bands off
-    // their head-on facing, which is the whole point of the arrangement.
+    // Translation only. The armature's tilt is fixed by TILT_X/TILT_Z; letting
+    // the pointer rock it as well would read as two competing motions.
     let targetX = 0;
     let targetY = 0;
     const onPointer = (e: PointerEvent) => {
